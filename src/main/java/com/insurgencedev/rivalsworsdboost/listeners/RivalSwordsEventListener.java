@@ -1,6 +1,7 @@
 package com.insurgencedev.rivalsworsdboost.listeners;
 
-import me.rivaldev.mobsword.rivalmobswords.api.SwordEssenceReceivePreEnchantEvent;
+import me.rivaldev.mobsword.rivalmobswords.api.SwordEssenceReceiveEnchantEvent;
+import me.rivaldev.mobsword.rivalmobswords.api.SwordXPGainEvent;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -16,8 +17,22 @@ import org.insurgencedev.insurgencesets.models.upgrade.Upgrade;
 public final class RivalSwordsEventListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
-    public void onReceive(SwordEssenceReceivePreEnchantEvent event) {
-        Player player = event.getPlayer();
+    public void onReceive(SwordEssenceReceiveEnchantEvent event) {
+        double total = getTotal(event.getPlayer(), event.getEssence(), "Essence");
+        if (total > 0) {
+            event.setEssence(total);
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onGain(SwordXPGainEvent event) {
+        double total = getTotal(event.getPlayer(), event.getXP(), "Sword Xp");
+        if (total > 0) {
+            event.setXP(total);
+        }
+    }
+
+    private double getTotal(Player player, double amount, String type) {
         IPlayer cache = ISetsAPI.getCache(player);
         double totalAmount = 0;
 
@@ -49,16 +64,15 @@ public final class RivalSwordsEventListener implements Listener {
             }
 
             for (Boost boost : upgrade.getBoosts()) {
-                if (boost.getNamespace().equals("RIVAL_SWORDS") && boost.getType().equals("Essence")) {
+                if (boost.getNamespace().equals("RIVAL_SWORDS") && boost.getType().equals(type)) {
                     double boostAmount = boost.getBOOST_SETTINGS().getDouble("Boost_Amount");
-                    totalAmount += calcAmount(event.getEssence(), boost.isPercent(), boostAmount);
+                    totalAmount += calcAmount(amount, boost.isPercent(), boostAmount);
                 }
             }
+
         }
 
-        if (totalAmount > 0) {
-            event.setEssence(totalAmount);
-        }
+        return totalAmount;
     }
 
     private double calcAmount(double amountFromEvent, boolean isPercent, double boostAmount) {
